@@ -1,0 +1,6 @@
+general:
+  configFile: config/strategy-fetcher.log
+  bindAddress: :8443
+scan:
+  dir: /my/src/bit-fever/reports
+  periodHour: 8
