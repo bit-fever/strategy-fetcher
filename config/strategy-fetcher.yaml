@@ -1,5 +1,5 @@
 general:
-  configFile: config/strategy-fetcher.log
+  configFile: log/strategy-fetcher.log
   bindAddress: :8443
 scan:
   dir: /my/src/bit-fever/reports

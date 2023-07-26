@@ -30,7 +30,7 @@ import "time"
 
 type Config struct {
 	General struct {
-		ConfigFile  string
+		LogFile     string
 		BindAddress string
 	}
 	Scan struct {
