@@ -86,7 +86,7 @@ func initLogs(cfg *config.Config) *os.File {
 
 	f, err := os.OpenFile(cfg.General.LogFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
 	wrt := io.MultiWriter(os.Stdout, f)
 	log.SetOutput(wrt)
@@ -130,7 +130,6 @@ func runHttpServer(router *gin.Engine, cfg *config.Config) {
 	}
 
 	tlsConfig := &tls.Config{
-		//		RootCAs: rootCAs,
 		ClientCAs:  rootCAs,
 		ClientAuth: tls.RequireAndVerifyClientCert,
 	}

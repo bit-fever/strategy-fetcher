@@ -36,8 +36,6 @@ type AccountSet struct {
 
 type Account struct {
 	Code    string
-	Balance float64
-	Equity  float64
 
 	Strategies map[string]*Strategy
 }
@@ -48,7 +46,8 @@ type Strategy struct {
 	Name   string
 	Ticker string
 
-	DailyInfo map[int]*DailyInfo
+	DailyInfo []*DailyInfo
+	TradeInfo []*TradeInfo
 }
 
 //=============================================================================
@@ -59,6 +58,20 @@ type DailyInfo struct {
 	CloseProfit float64
 	NumTrades   int
 	TrueRange   float64
+	Equity      float64
+	Balance     float64
+}
+
+//=============================================================================
+
+type TradeInfo struct {
+	Type             string
+	Day              int
+	Time             int
+	Position         int
+	Price            float64
+	PositionAtBroker int
+	PriceAtBroker    float64
 }
 
 //=============================================================================
@@ -81,7 +94,8 @@ func NewAccount() *Account {
 
 func NewStrategy() *Strategy {
 	str := &Strategy{}
-	str.DailyInfo = map[int]*DailyInfo{}
+	str.DailyInfo = []*DailyInfo{}
+	str.TradeInfo = []*TradeInfo{}
 	return str
 }
 
@@ -89,6 +103,12 @@ func NewStrategy() *Strategy {
 
 func NewDailyInfo() *DailyInfo {
 	return &DailyInfo{}
+}
+
+//=============================================================================
+
+func NewTradeInfo() *TradeInfo {
+	return &TradeInfo{}
 }
 
 //=============================================================================

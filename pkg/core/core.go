@@ -123,12 +123,8 @@ func handleLine(as *model.AccountSet, line string) {
 		handleInfo(as, tokens)
 	case DAILY:
 		handleDaily(as, tokens)
-	case LONG_ENTRY:
-	case LONG_EXIT:
-	case SHORT_ENTRY:
-	case SHORT_EXIT:
-	case LONG_SHORT:
-	case SHORT_LONG:
+	case LONG_ENTRY,LONG_EXIT,SHORT_ENTRY,SHORT_EXIT,LONG_SHORT,SHORT_LONG:
+		handleTrade(as, tokens)
 	default:
 		log.Println("Skipping unknown token: " + tokens[0])
 	}
@@ -164,16 +160,13 @@ func handleInfo(as *model.AccountSet, tokens []string) {
 //=============================================================================
 
 func handleDaily(as *model.AccountSet, tokens []string) {
-	strDay := tokens[1]
+	strDay        := tokens[1]
 	strOpenEquity := tokens[2]
-	strNetProfit := strings.TrimLeft(tokens[3], " ")
-	strTrueRange := tokens[4]
-	strNumTrades := tokens[5]
-	strEquity := tokens[6]
-	strBalance := tokens[7]
-
-	convertBalance(as.CurrAccount, strBalance)
-	convertEquity(as.CurrAccount, strEquity)
+	strNetProfit  := tokens[3]
+	strTrueRange  := tokens[4]
+	strNumTrades  := tokens[5]
+	strEquity     := tokens[6]
+	strBalance    := tokens[7]
 
 	day := convertDate(strDay)
 
@@ -181,49 +174,17 @@ func handleDaily(as *model.AccountSet, tokens []string) {
 		return
 	}
 
-	di, ok := as.CurrStrategy.DailyInfo[day]
-
-	if !ok {
-		di = model.NewDailyInfo()
-		as.CurrStrategy.DailyInfo[day] = di
-	}
+	di := model.NewDailyInfo()
+	as.CurrStrategy.DailyInfo = append(as.CurrStrategy.DailyInfo, di)
 
 	di.Day = day
 
-	convertOpenProfit(di, strOpenEquity)
+	convertOpenProfit (di, strOpenEquity)
 	convertCloseProfit(di, strNetProfit)
-	convertTrueRange(di, strTrueRange)
-	convertNumTrades(di, strNumTrades)
-}
-
-//=============================================================================
-
-func convertBalance(acc *model.Account, strValue string) {
-	value, err := strconv.ParseFloat(strValue, 64)
-
-	if err != nil {
-		log.Println("Cannot convert balance: " + strValue)
-	} else {
-		//--- if the last scanned strategy is not in autotrading, the balance is 0
-		if value != 0 {
-			acc.Balance = value
-		}
-	}
-}
-
-//=============================================================================
-
-func convertEquity(acc *model.Account, strValue string) {
-	value, err := strconv.ParseFloat(strValue, 64)
-
-	if err != nil {
-		log.Println("Cannot convert equity: " + strValue)
-	} else {
-		//--- if the last scanned strategy is not in autotrading, the equity is 0
-		if value != 0 {
-			acc.Equity = value
-		}
-	}
+	convertTrueRange  (di, strTrueRange)
+	convertNumTrades  (di, strNumTrades)
+	convertEquity     (di, strEquity)
+	convertBalance    (di, strBalance)
 }
 
 //=============================================================================
@@ -296,6 +257,120 @@ func convertNumTrades(di *model.DailyInfo, strValue string) {
 		log.Println("Cannot convert num trades: " + strValue)
 	} else {
 		di.NumTrades = int(value)
+	}
+}
+
+//=============================================================================
+
+func convertBalance(di *model.DailyInfo, strValue string) {
+	value, err := strconv.ParseFloat(strValue, 64)
+
+	if err != nil {
+		log.Println("Cannot convert balance: " + strValue)
+	} else {
+		di.Balance = value
+	}
+}
+
+//=============================================================================
+
+func convertEquity(di *model.DailyInfo, strValue string) {
+	value, err := strconv.ParseFloat(strValue, 64)
+
+	if err != nil {
+		log.Println("Cannot convert equity: " + strValue)
+	} else {
+		di.Equity = value
+	}
+}
+
+//=============================================================================
+
+func handleTrade(as *model.AccountSet, tokens []string) {
+	strType       := tokens[0]
+	strDay        := tokens[1]
+	strTime       := tokens[2]
+	strPosition   := tokens[3]
+	strPrice      := tokens[4]
+	strPosAtBrk   := tokens[5]
+	strPriceAtBrk := tokens[6]
+
+	day := convertDate(strDay)
+
+	if day == 0 {
+		return
+	}
+
+	ti := model.NewTradeInfo()
+	as.CurrStrategy.TradeInfo = append(as.CurrStrategy.TradeInfo, ti)
+
+	ti.Type= strType
+	ti.Day = day
+
+	convertTime           (ti, strTime)
+	convertPosition        (ti, strPosition)
+	convertPrice           (ti, strPrice)
+	convertPositionAtBroker(ti, strPosAtBrk)
+	convertPriceAtBroker   (ti, strPriceAtBrk)
+}
+
+//=============================================================================
+
+func convertTime(ti *model.TradeInfo, strValue string) {
+	value, err := strconv.ParseInt(strValue, 10, 32)
+
+	if err != nil {
+		log.Println("Cannot convert time: " + strValue)
+	} else {
+		ti.Time = int(value)
+	}
+}
+
+//=============================================================================
+
+func convertPosition(ti *model.TradeInfo, strValue string) {
+	value, err := strconv.ParseInt(strValue, 10, 32)
+
+	if err != nil {
+		log.Println("Cannot convert position: " + strValue)
+	} else {
+		ti.Position = int(value)
+	}
+}
+
+//=============================================================================
+
+func convertPrice(ti *model.TradeInfo, strValue string) {
+	value, err := strconv.ParseFloat(strValue, 64)
+
+	if err != nil {
+		log.Println("Cannot convert price: " + strValue)
+	} else {
+		ti.Price = value
+	}
+}
+
+//=============================================================================
+
+func convertPositionAtBroker(ti *model.TradeInfo, strValue string) {
+	value, err := strconv.ParseInt(strValue, 10, 32)
+
+	if err != nil {
+		log.Println("Cannot convert position at broker: " + strValue)
+	} else {
+		ti.PositionAtBroker = int(value)
+	}
+}
+
+//=============================================================================
+
+func convertPriceAtBroker(ti *model.TradeInfo, strValue string) {
+	value, err := strconv.ParseFloat(strValue, 64)
+
+	if err != nil {
+		log.Println("Cannot convert price at broker: " + strValue)
+	} else {
+		ti.PriceAtBroker = value
 	}
 }
 
