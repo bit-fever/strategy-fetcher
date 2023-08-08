@@ -26,18 +26,9 @@ package model
 
 //=============================================================================
 
-type AccountSet struct {
-	Accounts     map[string]*Account
-	CurrAccount  *Account
-	CurrStrategy *Strategy
-}
-
-//=============================================================================
-
-type Account struct {
-	Code    string
-
+type StrategySet struct {
 	Strategies map[string]*Strategy
+	CurrStrategy *Strategy
 }
 
 //=============================================================================
@@ -47,7 +38,6 @@ type Strategy struct {
 	Ticker string
 
 	DailyInfo []*DailyInfo
-	TradeInfo []*TradeInfo
 }
 
 //=============================================================================
@@ -56,38 +46,17 @@ type DailyInfo struct {
 	Day         int
 	OpenProfit  float64
 	CloseProfit float64
-	NumTrades   int
 	TrueRange   float64
-	Equity      float64
-	Balance     float64
+	Position    int
+	Running     bool
 }
 
 //=============================================================================
 
-type TradeInfo struct {
-	Type             string
-	Day              int
-	Time             int
-	Position         int
-	Price            float64
-	PositionAtBroker int
-	PriceAtBroker    float64
-}
-
-//=============================================================================
-
-func NewAccountSet() *AccountSet {
-	as := &AccountSet{}
-	as.Accounts = map[string]*Account{}
-	return as
-}
-
-//=============================================================================
-
-func NewAccount() *Account {
-	acc := &Account{}
-	acc.Strategies = map[string]*Strategy{}
-	return acc
+func NewStrategySet() *StrategySet {
+	ss := &StrategySet{}
+	ss.Strategies = map[string]*Strategy{}
+	return ss
 }
 
 //=============================================================================
@@ -95,7 +64,6 @@ func NewAccount() *Account {
 func NewStrategy() *Strategy {
 	str := &Strategy{}
 	str.DailyInfo = []*DailyInfo{}
-	str.TradeInfo = []*TradeInfo{}
 	return str
 }
 
@@ -103,12 +71,6 @@ func NewStrategy() *Strategy {
 
 func NewDailyInfo() *DailyInfo {
 	return &DailyInfo{}
-}
-
-//=============================================================================
-
-func NewTradeInfo() *TradeInfo {
-	return &TradeInfo{}
 }
 
 //=============================================================================

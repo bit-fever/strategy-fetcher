@@ -38,12 +38,12 @@ import (
 
 //=============================================================================
 
-var accounts map[string]*model.Account
+var strategies map[string]*model.Strategy
 
 //=============================================================================
 
-func GetAccounts() []*model.Account {
-	return maps.Values(accounts)
+func GetStrategies() []*model.Strategy {
+	return maps.Values(strategies)
 }
 
 //=============================================================================
@@ -75,19 +75,19 @@ func run(cfg *config.Config) {
 	if error != nil {
 		log.Println("Scan error: ", error)
 	} else {
-		as := model.NewAccountSet()
+		ss := model.NewStrategySet()
 		for _, entry := range files {
 			if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".log") {
-				handleFile(as, dir, entry.Name())
+				handleFile(ss, dir, entry.Name())
 			}
 		}
-		accounts = as.Accounts
+		strategies = ss.Strategies
 	}
 }
 
 //=============================================================================
 
-func handleFile(as *model.AccountSet, dir string, fileName string) {
+func handleFile(ss *model.StrategySet, dir string, fileName string) {
 	log.Println("Handling: " + fileName)
 
 	path := dir + string(os.PathSeparator) + fileName
@@ -104,7 +104,7 @@ func handleFile(as *model.AccountSet, dir string, fileName string) {
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
-		handleLine(as, scanner.Text())
+		handleLine(ss, scanner.Text())
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -114,17 +114,14 @@ func handleFile(as *model.AccountSet, dir string, fileName string) {
 
 //=============================================================================
 
-func handleLine(as *model.AccountSet, line string) {
-
+func handleLine(ss *model.StrategySet, line string) {
 	tokens := strings.Split(line, "|")
 
 	switch tokens[0] {
 	case INFO:
-		handleInfo(as, tokens)
+		handleInfo(ss, tokens)
 	case DAILY:
-		handleDaily(as, tokens)
-	case LONG_ENTRY,LONG_EXIT,SHORT_ENTRY,SHORT_EXIT,LONG_SHORT,SHORT_LONG:
-		handleTrade(as, tokens)
+		handleDaily(ss, tokens)
 	default:
 		log.Println("Skipping unknown token: " + tokens[0])
 	}
@@ -132,41 +129,30 @@ func handleLine(as *model.AccountSet, line string) {
 
 //=============================================================================
 
-func handleInfo(as *model.AccountSet, tokens []string) {
-	accName := tokens[1]
-	ticker := tokens[2]
-	strategy := tokens[3]
+func handleInfo(ss *model.StrategySet, tokens []string) {
+	ticker   := tokens[1]
+	strategy := tokens[2]
 
-	acc, ok := as.Accounts[accName]
-
-	if !ok {
-		acc = model.NewAccount()
-		acc.Code = accName
-		as.Accounts[accName] = acc
-		as.CurrAccount = acc
-	}
-
-	str, ok := acc.Strategies[strategy]
+	str, ok := ss.Strategies[strategy]
 
 	if !ok {
 		str = model.NewStrategy()
-		str.Name = strategy
+		str.Name   = strategy
 		str.Ticker = ticker
-		acc.Strategies[strategy] = str
-		as.CurrStrategy = str
+		ss.Strategies[strategy] = str
+		ss.CurrStrategy = str
 	}
 }
 
 //=============================================================================
 
-func handleDaily(as *model.AccountSet, tokens []string) {
+func handleDaily(ss *model.StrategySet, tokens []string) {
 	strDay        := tokens[1]
 	strOpenEquity := tokens[2]
 	strNetProfit  := tokens[3]
 	strTrueRange  := tokens[4]
-	strNumTrades  := tokens[5]
-	strEquity     := tokens[6]
-	strBalance    := tokens[7]
+	strPosition   := tokens[5]
+	strRunning    := tokens[6]
 
 	day := convertDate(strDay)
 
@@ -175,16 +161,15 @@ func handleDaily(as *model.AccountSet, tokens []string) {
 	}
 
 	di := model.NewDailyInfo()
-	as.CurrStrategy.DailyInfo = append(as.CurrStrategy.DailyInfo, di)
+	ss.CurrStrategy.DailyInfo = append(ss.CurrStrategy.DailyInfo, di)
 
-	di.Day = day
+	di.Day     = day
+	di.Running = (strRunning=="T")
 
 	convertOpenProfit (di, strOpenEquity)
 	convertCloseProfit(di, strNetProfit)
 	convertTrueRange  (di, strTrueRange)
-	convertNumTrades  (di, strNumTrades)
-	convertEquity     (di, strEquity)
-	convertBalance    (di, strBalance)
+	convertPosition   (di, strPosition)
 }
 
 //=============================================================================
@@ -250,127 +235,13 @@ func convertTrueRange(di *model.DailyInfo, strValue string) {
 
 //=============================================================================
 
-func convertNumTrades(di *model.DailyInfo, strValue string) {
-	value, err := strconv.ParseInt(strValue, 10, 32)
-
-	if err != nil {
-		log.Println("Cannot convert num trades: " + strValue)
-	} else {
-		di.NumTrades = int(value)
-	}
-}
-
-//=============================================================================
-
-func convertBalance(di *model.DailyInfo, strValue string) {
-	value, err := strconv.ParseFloat(strValue, 64)
-
-	if err != nil {
-		log.Println("Cannot convert balance: " + strValue)
-	} else {
-		di.Balance = value
-	}
-}
-
-//=============================================================================
-
-func convertEquity(di *model.DailyInfo, strValue string) {
-	value, err := strconv.ParseFloat(strValue, 64)
-
-	if err != nil {
-		log.Println("Cannot convert equity: " + strValue)
-	} else {
-		di.Equity = value
-	}
-}
-
-//=============================================================================
-
-func handleTrade(as *model.AccountSet, tokens []string) {
-	strType       := tokens[0]
-	strDay        := tokens[1]
-	strTime       := tokens[2]
-	strPosition   := tokens[3]
-	strPrice      := tokens[4]
-	strPosAtBrk   := tokens[5]
-	strPriceAtBrk := tokens[6]
-
-	day := convertDate(strDay)
-
-	if day == 0 {
-		return
-	}
-
-	ti := model.NewTradeInfo()
-	as.CurrStrategy.TradeInfo = append(as.CurrStrategy.TradeInfo, ti)
-
-	ti.Type= strType
-	ti.Day = day
-
-	convertTime           (ti, strTime)
-	convertPosition        (ti, strPosition)
-	convertPrice           (ti, strPrice)
-	convertPositionAtBroker(ti, strPosAtBrk)
-	convertPriceAtBroker   (ti, strPriceAtBrk)
-}
-
-//=============================================================================
-
-func convertTime(ti *model.TradeInfo, strValue string) {
-	value, err := strconv.ParseInt(strValue, 10, 32)
-
-	if err != nil {
-		log.Println("Cannot convert time: " + strValue)
-	} else {
-		ti.Time = int(value)
-	}
-}
-
-//=============================================================================
-
-func convertPosition(ti *model.TradeInfo, strValue string) {
+func convertPosition(di *model.DailyInfo, strValue string) {
 	value, err := strconv.ParseInt(strValue, 10, 32)
 
 	if err != nil {
 		log.Println("Cannot convert position: " + strValue)
 	} else {
-		ti.Position = int(value)
-	}
-}
-
-//=============================================================================
-
-func convertPrice(ti *model.TradeInfo, strValue string) {
-	value, err := strconv.ParseFloat(strValue, 64)
-
-	if err != nil {
-		log.Println("Cannot convert price: " + strValue)
-	} else {
-		ti.Price = value
-	}
-}
-
-//=============================================================================
-
-func convertPositionAtBroker(ti *model.TradeInfo, strValue string) {
-	value, err := strconv.ParseInt(strValue, 10, 32)
-
-	if err != nil {
-		log.Println("Cannot convert position at broker: " + strValue)
-	} else {
-		ti.PositionAtBroker = int(value)
-	}
-}
-
-//=============================================================================
-
-func convertPriceAtBroker(ti *model.TradeInfo, strValue string) {
-	value, err := strconv.ParseFloat(strValue, 64)
-
-	if err != nil {
-		log.Println("Cannot convert price at broker: " + strValue)
-	} else {
-		ti.PriceAtBroker = value
+		di.Position = int(value)
 	}
 }
 

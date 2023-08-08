@@ -26,16 +26,7 @@ package core
 
 //=============================================================================
 
-const INFO = "INFO"
+const INFO  = "INFO"
 const DAILY = "DAILY"
-const LONG_ENTRY = "LE"
-const LONG_EXIT = "LX"
-const SHORT_ENTRY = "SE"
-const SHORT_EXIT = "SX"
-
-//--- Reversal case
-
-const LONG_SHORT = "LS"
-const SHORT_LONG = "SL"
 
 //=============================================================================

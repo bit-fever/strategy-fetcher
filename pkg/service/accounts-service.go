@@ -32,8 +32,8 @@ import (
 
 //=============================================================================
 
-func getAccounts(c *gin.Context) {
-	c.JSON(http.StatusOK, core.GetAccounts())
+func getStrategies(c *gin.Context) {
+	c.JSON(http.StatusOK, core.GetStrategies())
 }
 
 //=============================================================================
