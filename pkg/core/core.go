@@ -150,9 +150,7 @@ func handleDaily(ss *model.StrategySet, tokens []string) {
 	strDay        := tokens[1]
 	strOpenEquity := tokens[2]
 	strPosition   := tokens[3]
-	strGapValue   := tokens[4]
-	strTrueRange  := tokens[5]
-	strNumTrades  := tokens[6]
+	strNumTrades  := tokens[4]
 
 	day := convertDate(strDay)
 
@@ -165,11 +163,9 @@ func handleDaily(ss *model.StrategySet, tokens []string) {
 
 	di.Day = day
 
-	convertOpenProfit (di, strOpenEquity)
-	convertPosition   (di, strPosition)
-	convertGapValue   (di, strGapValue)
-	convertTrueRange  (di, strTrueRange)
-	convertNumTrades  (di, strNumTrades)
+	convertOpenProfit(di, strOpenEquity)
+	convertPosition  (di, strPosition)
+	convertNumTrades (di, strNumTrades)
 }
 
 //=============================================================================
@@ -218,30 +214,6 @@ func convertPosition(di *model.DailyInfo, strValue string) {
 		log.Println("Cannot convert position: " + strValue)
 	} else {
 		di.Position = int(value)
-	}
-}
-
-//=============================================================================
-
-func convertGapValue(di *model.DailyInfo, strValue string) {
-	value, err := strconv.ParseFloat(strValue, 64)
-
-	if err != nil {
-		log.Println("Cannot convert gap value: " + strValue)
-	} else {
-		di.GapValue = value
-	}
-}
-
-//=============================================================================
-
-func convertTrueRange(di *model.DailyInfo, strValue string) {
-	value, err := strconv.ParseFloat(strValue, 64)
-
-	if err != nil {
-		log.Println("Cannot convert true range: " + strValue)
-	} else {
-		di.TrueRange = value
 	}
 }
 

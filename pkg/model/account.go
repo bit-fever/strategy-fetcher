@@ -46,8 +46,6 @@ type DailyInfo struct {
 	Day         int
 	OpenProfit  float64
 	Position    int
-	GapValue    float64
-	TrueRange   float64
 	NumTrades   int
 }
 
