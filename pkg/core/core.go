@@ -77,7 +77,7 @@ func run(cfg *config.Config) {
 	} else {
 		ss := model.NewStrategySet()
 		for _, entry := range files {
-			if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".log") {
+			if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".data") {
 				handleFile(ss, dir, entry.Name())
 			}
 		}
@@ -147,10 +147,11 @@ func handleInfo(ss *model.StrategySet, tokens []string) {
 //=============================================================================
 
 func handleDaily(ss *model.StrategySet, tokens []string) {
-	strDay        := tokens[1]
-	strOpenEquity := tokens[2]
-	strPosition   := tokens[3]
-	strNumTrades  := tokens[4]
+	strDay          := tokens[1]
+	strOpenEquity   := tokens[2]
+	strClosedEquity := tokens[3]
+	strPosition     := tokens[4]
+	strNumTrades    := tokens[5]
 
 	day := convertDate(strDay)
 
@@ -163,9 +164,10 @@ func handleDaily(ss *model.StrategySet, tokens []string) {
 
 	di.Day = day
 
-	convertOpenProfit(di, strOpenEquity)
-	convertPosition  (di, strPosition)
-	convertNumTrades (di, strNumTrades)
+	convertOpenProfit  (di, strOpenEquity)
+	convertClosedProfit(di, strClosedEquity)
+	convertPosition    (di, strPosition)
+	convertNumTrades   (di, strNumTrades)
 }
 
 //=============================================================================
@@ -202,6 +204,18 @@ func convertOpenProfit(di *model.DailyInfo, strValue string) {
 		log.Println("Cannot convert open profit: " + strValue)
 	} else {
 		di.OpenProfit = value
+	}
+}
+
+//=============================================================================
+
+func convertClosedProfit(di *model.DailyInfo, strValue string) {
+	value, err := strconv.ParseFloat(strValue, 64)
+
+	if err != nil {
+		log.Println("Cannot convert closed profit: " + strValue)
+	} else {
+		di.ClosedProfit = value
 	}
 }
 

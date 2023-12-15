@@ -43,10 +43,11 @@ type Strategy struct {
 //=============================================================================
 
 type DailyInfo struct {
-	Day         int
-	OpenProfit  float64
-	Position    int
-	NumTrades   int
+	Day          int
+	OpenProfit   float64
+	ClosedProfit float64
+	Position     int
+	NumTrades    int
 }
 
 //=============================================================================
